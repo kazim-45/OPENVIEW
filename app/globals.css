@@ -1,0 +1,711 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --film-black: #090909;
+  --film-dark: #111111;
+  --film-panel: #161616;
+  --film-border: #252525;
+  --film-blue: #00CFFF;
+  --film-blue-dim: #0099BB;
+  --film-blue-glow: rgba(0, 207, 255, 0.15);
+  --film-red: #FF3D5A;
+  --film-amber: #FFB800;
+  --film-text: #C8C8C8;
+  --film-muted: #555555;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--film-black);
+  color: var(--film-text);
+  font-family: 'JetBrains Mono', monospace;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Viewfinder camera stream ── */
+.viewfinder-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+video.camera-stream {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* ── Lens crop letterbox ── */
+.aspect-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.aspect-mask .bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.88);
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aspect-mask .bar-top { top: 0; }
+.aspect-mask .bar-bottom { bottom: 0; }
+
+/* ── Overlay grid canvas ── */
+.overlay-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* ── UI auto-hide ── */
+.ui-chrome {
+  transition: opacity 0.5s ease;
+}
+
+.ui-chrome.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Top HUD bar ── */
+.hud-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--film-text);
+}
+
+.hud-tag {
+  padding: 3px 8px;
+  border: 1px solid var(--film-border);
+  border-radius: 2px;
+  background: rgba(0,0,0,0.5);
+  color: var(--film-blue);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hud-logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 20px;
+  letter-spacing: 0.15em;
+  color: #fff;
+}
+
+.hud-logo span {
+  color: var(--film-blue);
+}
+
+/* ── Exposure meter ── */
+.exposure-meter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meter-bar {
+  width: 60px;
+  height: 3px;
+  background: var(--film-border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--film-blue);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.meter-fill.overexposed { background: var(--film-amber); }
+.meter-fill.underexposed { background: var(--film-muted); }
+
+/* ── Bottom toolbar ── */
+.bottom-toolbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 0 0 env(safe-area-inset-bottom) 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 12px 8px 16px;
+  gap: 4px;
+}
+
+.tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: none;
+  color: var(--film-text);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tool-btn:active { transform: scale(0.92); }
+
+.tool-btn.active {
+  color: var(--film-blue);
+}
+
+.tool-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ── Capture button ── */
+.capture-btn-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: none;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.capture-btn:active { transform: scale(0.9); }
+
+.capture-btn-inner {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+  transition: background 0.15s ease;
+}
+
+.capture-btn:active .capture-btn-inner {
+  background: rgba(255,255,255,0.7);
+}
+
+.capture-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.4);
+  animation: pulseRing 2s ease-out infinite;
+}
+
+/* ── Shutter flash ── */
+.shutter-flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  animation: shutter 0.2s ease;
+}
+
+/* ── Drawers / panels ── */
+.drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  background: var(--film-panel);
+  border-top: 1px solid var(--film-border);
+  border-radius: 16px 16px 0 0;
+  padding: 16px 16px 32px;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-handle {
+  width: 36px;
+  height: 3px;
+  background: var(--film-border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.drawer-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.drawer-item {
+  padding: 12px 8px;
+  border: 1px solid var(--film-border);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.drawer-item:active { transform: scale(0.95); }
+
+.drawer-item.selected {
+  border-color: var(--film-blue);
+  background: var(--film-blue-glow);
+  color: var(--film-blue);
+}
+
+.drawer-item .di-main {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.drawer-item.selected .di-main { color: var(--film-blue); }
+
+/* ── Settings panel ── */
+.settings-panel {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  z-index: 80;
+  background: var(--film-panel);
+  border: 1px solid var(--film-border);
+  border-radius: 10px;
+  padding: 12px;
+  min-width: 180px;
+  animation: fadeIn 0.2s ease;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.toggle-row:last-child { border-bottom: none; }
+
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--film-border);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-switch.on { background: var(--film-blue); }
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.toggle-switch.on .toggle-thumb { transform: translateX(16px); }
+
+/* ── Director's marks ── */
+.director-mark {
+  position: absolute;
+  z-index: 30;
+  pointer-events: all;
+  cursor: move;
+  transform: translate(-50%, -50%);
+}
+
+.mark-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+  transition: transform 0.15s ease;
+}
+
+.mark-label {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  white-space: nowrap;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Reference library ── */
+.library-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.25s ease;
+  overflow: hidden;
+}
+
+.library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--film-border);
+}
+
+.library-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 2px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.library-item {
+  aspect-ratio: 16/9;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--film-dark);
+}
+
+.library-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.library-item:hover img { transform: scale(1.05); }
+
+.library-item-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 6px;
+  background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  font-size: 9px;
+  color: var(--film-blue);
+  letter-spacing: 0.06em;
+}
+
+.library-item-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--film-red);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.library-item:hover .library-item-del { opacity: 1; }
+
+/* ── Compare mode ── */
+.compare-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.compare-overlay img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+}
+
+.compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--film-blue);
+  cursor: col-resize;
+  pointer-events: all;
+  z-index: 25;
+}
+
+.compare-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--film-blue);
+  border: 2px solid #fff;
+}
+
+/* ── Angle guide overlays ── */
+.angle-guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.angle-guide-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  color: rgba(0, 207, 255, 0.7);
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── Lens label ── */
+.lens-label {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: rgba(0, 207, 255, 0.8);
+  background: rgba(0,0,0,0.4);
+  padding: 4px 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 207, 255, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.4s ease;
+}
+
+/* ── Error screen ── */
+.error-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--film-black);
+  z-index: 100;
+  padding: 32px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.error-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 28px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.error-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--film-muted);
+  margin-bottom: 24px;
+  max-width: 300px;
+}
+
+.retry-btn {
+  padding: 12px 28px;
+  background: var(--film-blue);
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.retry-btn:active { opacity: 0.8; }
+
+/* ── Loading screen ── */
+.loading-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--film-black);
+  z-index: 100;
+  gap: 20px;
+}
+
+.aperture-anim {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--film-border);
+  border-top-color: var(--film-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 14px;
+  letter-spacing: 0.25em;
+  color: var(--film-muted);
+}
+
+/* ── DOF blur edges ── */
+.dof-blur {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 14;
+  background: radial-gradient(ellipse 60% 50% at 50% 50%,
+    transparent 55%,
+    rgba(0,0,0,0.3) 75%,
+    rgba(0,0,0,0.6) 100%
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%,
+    transparent 50%,
+    black 80%
+  );
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%,
+    transparent 50%,
+    black 80%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.dof-blur.active { opacity: 1; }
+
+/* ── Dutch tilt guide ── */
+.dutch-tilt-line {
+  position: absolute;
+  top: 50%;
+  left: -10%;
+  right: -10%;
+  height: 1px;
+  background: rgba(0, 207, 255, 0.5);
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+/* ── Scrollbar hide ── */
+::-webkit-scrollbar { width: 0; }
