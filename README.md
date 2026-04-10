@@ -17,27 +17,6 @@ Open `http://localhost:3000` and allow camera access.
 
 > **iOS Note**: Camera access requires HTTPS. For local dev on iPhone, either use a tunneling service like `ngrok` or deploy to Vercel (it's free and instant).
 
----
-
-## Deploy to Vercel
-
-```bash
-npm run build     # Builds static export
-vercel deploy     # Or push to GitHub and import in vercel.com
-```
-
----
-
-## Testing on a Real Phone
-
-1. Push to GitHub
-2. Import in [vercel.com](https://vercel.com) — deployed in ~30 seconds
-3. Open the live URL on your phone
-4. Allow camera when prompted
-5. Add to Home Screen for full-screen experience (iOS: Share → Add to Home Screen)
-
----
-
 ## Feature Overview
 
 | Feature | Details |
